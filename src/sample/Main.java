@@ -6,6 +6,9 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+/**
+ *  Main class
+ */
 public class Main extends Application {
 
     public static ProductDB pdb = new ProductDB("");
