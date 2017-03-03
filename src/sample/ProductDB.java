@@ -71,10 +71,16 @@ public class ProductDB {
     }
 
     public FoodProduct scan(String upc) {
-        String productName = upcMap.get(upc);
+        boolean atleastOneAlpha = upc.matches(".*[a-zA-Z]+.*");
+        String productName;
+        if (atleastOneAlpha)
+            productName = upc;
+        else
+            productName = upcMap.get(upc);
         FoodProduct fp = productMap.get(productName);
         if (fp != null) {
-            fp.setQuantity(fp.getQuantity() - 1);
+            if (!atleastOneAlpha) // decrement when scanned by UPC
+                fp.setQuantity(fp.getQuantity() - 1);
             return fp;
         }
         else
@@ -92,8 +98,9 @@ public class ProductDB {
      * Read product information from DB
      * DB formate is crackers,1234567891,10,2.99,05162018
      * @param fileName name of file to be read
+     * @return 0 indicates file successfully read
      */
-    private void readProductDB(String fileName) {
+    public int readProductDB(String fileName) {
         if (fileName == null || fileName.equals(""))
             fileName = "productDB.txt";
         productDBFileName = fileName;
@@ -110,13 +117,51 @@ public class ProductDB {
                 upcMap.put(pv[1],pv[0]);
             }
             updateSortedArrays();
+            return 0;
         }
         catch (FileNotFoundException e) {
-            System.out.println("Product DB file not found");
-            e.printStackTrace();
+            return -1;
+            // System.out.println("Product DB file not found");
+            // e.printStackTrace();
         }
     }
 
+    /**
+     * Read product information from DB
+     * DB formate is crackers,1234567891,10,2.99,05162018
+     * @param fileName name of file to be read
+     * @return 0 indicates file successfully read
+     */
+    public int readDeliveryDB(String fileName) {
+        if (fileName == null || fileName.equals(""))
+            return -1;
+        File file = new File(fileName);
+        try {
+            Scanner read = new Scanner(file);
+            while (read.hasNextLine()) {
+                String line = read.nextLine();
+                String regExp = "\\s*(\\s|,)\\s*";
+                String[] pv = line.split(regExp);
+                System.out.println(Arrays.toString(pv));
+                FoodProduct fp = productMap.get(pv[0]);
+                if (fp != null) {
+                    fp.setQuantity(fp.getQuantity() + Integer.parseInt(pv[2]));
+                }
+                else {
+                    fp = new FoodProduct(pv[0], Integer.parseInt(pv[2]), new Double(Double.parseDouble(pv[3])), pv[4], pv[1]);
+                    productMap.put(pv[0], fp);
+                    upcMap.put(pv[1],pv[0]);
+                }
+            }
+            updateSortedArrays();
+            return 0;
+        }
+        catch (FileNotFoundException e) {
+            return -1;
+            // System.out.println("Product DB file not found");
+            // e.printStackTrace();
+        }
+    }
     /**
      * Write product information to DB
      */

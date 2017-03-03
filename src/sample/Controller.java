@@ -43,8 +43,18 @@ public class Controller {
     public FoodProduct collectTextFields() {
         String productName = productTextField.getText();
         String upc = UPCTextField.getText();
-        int quantity = Integer.parseInt(quantityTextField.getText());
-        double price = Double.parseDouble(priceTextField.getText());
+        String numbersOnlyRegex = "\\d+";
+        int quantity = 0;
+        String quantityString = quantityTextField.getText();
+        System.out.println(quantityString.matches(numbersOnlyRegex));
+        if (quantityString.matches(numbersOnlyRegex))
+            quantity = Integer.parseInt(quantityTextField.getText());
+        double price = 0.0;
+        String priceString = priceTextField.getText();
+
+        System.out.println(priceString.matches(numbersOnlyRegex));
+        if (priceString.replace(".","").matches(numbersOnlyRegex))
+            price = Double.parseDouble(priceString);
         String expDate = expDateTextField.getText();
         return new FoodProduct(productName, quantity, price, expDate, upc);
     }
@@ -96,6 +106,12 @@ public class Controller {
     private Button deleteButton;
 
     @FXML
+    private TextField altDBTextField;
+
+    @FXML
+    private Button readAltDBButton;
+
+    @FXML
     void enterButton(ActionEvent event) {
 
     }
@@ -109,24 +125,25 @@ public class Controller {
     @FXML
     void handleDeleteButton(MouseEvent event) {
         FoodProduct fp = collectTextFields();
-        Main.pdb.remove(fp.getName());
+        String productName = productTextField.getText();
+        if (Main.pdb.remove(fp.getName()) == null)
+            productTextField.setText(productName + " not found");
+        else
+            productTextField.setText(productName + " removed");
 
     }
 
     @FXML
     void handleEnterButton(MouseEvent event) {
         String upc = cashiereUPCTextField.getText();
-        if (upc.equals("") || upc.length() != 10) {
-            displayln(checkoutTextArea, "Must enter UPC number (10 decimal digits).");
+        FoodProduct fp = Main.pdb.scan(upc);
+        if (fp == null) {
+            displayln(checkoutTextArea, "Call manager, UPC " + upc + " not found.");
         }
         else {
-            FoodProduct fp = Main.pdb.scan(upc);
-            if (fp == null) {
-                displayln(checkoutTextArea, "Call manager, UPC " + upc + " not found.");
-            }
-            else {
-                displayln(checkoutTextArea, fp.getName() + " " + fp.getPrice());
-            }
+            boolean atleastOneAlpha = upc.matches(".*[a-zA-Z]+.*");
+            String prefix = atleastOneAlpha ? "Name: " : "UPC: ";
+            displayln(checkoutTextArea, prefix + fp.getName() + " " + fp.getPrice());
         }
 
     }
@@ -154,6 +171,17 @@ public class Controller {
     void handleUpdateButton(MouseEvent event) {
         FoodProduct fp = collectTextFields();
         Main.pdb.add(fp);
+    }
+
+    @FXML
+    void handleReadAltDBButton(MouseEvent event) {
+        String fileName = altDBTextField.getText();
+        System.out.println(fileName);
+        if (Main.pdb.readDeliveryDB(fileName) != 0)
+            altDBTextField.setText("Invalid Filename, Try again.");
+        else
+            altDBTextField.setText("Successfully loaded DB from " + fileName);
+
     }
 
 }
